@@ -74,7 +74,7 @@ function openPostModal(slug) {
       <div class="post-body">${post.html}</div>
     </article>`;
   document.body.appendChild(modal);
-  document.body.style.overflow = 'hidden';
+  document.body.classList.add('modal-open');
   Prism.highlightAllUnder(modal);
   modal.querySelector('.modal-backdrop').addEventListener('click', () => closeModal(modal));
   modal.querySelector('.modal-close').addEventListener('click', () => closeModal(modal));
@@ -82,5 +82,5 @@ function openPostModal(slug) {
 
 function closeModal(m) {
   m.remove();
-  document.body.style.overflow = '';
+  document.body.classList.remove('modal-open');
 }
