@@ -83,13 +83,14 @@ function openPostModal(slug) {
   if (window.Prism && typeof Prism.highlightAllUnder === 'function') {
     Prism.highlightAllUnder(modal);
   }
+
   modal.querySelector('.modal-backdrop').addEventListener('click', () => closeModal(modal));
   modal.querySelector('.modal-close').addEventListener('click', () => closeModal(modal));
 }
 
 function closeModal(m) {
   m.remove();
-  document.body.style.overflow = '';
+  document.body.classList.remove('modal-open');
 }
 
 // Dynamically append extended content for specific posts without touching posts.json

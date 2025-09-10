@@ -64,6 +64,10 @@ a { color: var(--brand); text-decoration: none; }
 /* Modal */
 .modal { position: fixed; inset: 0; z-index: 50; overflow-y: auto; }
 .modal-backdrop { position: absolute; inset:0; background: rgba(0,0,0,0.45); }
-.modal-card { position: relative; max-width: 900px; margin: 40px auto; background: #fff; border: 1px solid var(--border); border-radius: 16px; padding: 20px; z-index: 51; max-height: calc(100vh - 80px); overflow-y: auto; }
+.modal-card { position: relative; max-width: 900px; margin: 40px auto; background: #fff; border: 1px solid var(--border); border-radius: 16px; padding: 20px; z-index: 51; height: 80vh; overflow-y: scroll; }
 .modal-close { position: absolute; top: 10px; right: 12px; background: #fff; border: 1px solid var(--border); border-radius: 999px; width: 36px; height: 36px; cursor: pointer; }
 .post-body pre { background: #0b1020; color: #e5e7eb; padding: 12px; border-radius: 12px; overflow-x: auto; }
+
+body.modal-open {
+  overflow: hidden;
+}
