@@ -94,8 +94,9 @@ function closeModal(m) {
 
 // Dynamically append extended content for specific posts without touching posts.json
 function getPostAppendix(slug) {
-  if (slug !== 'flaky-tests-what-really-works') return '';
-  return `
+  // Flaky tests appendix
+  if (slug === 'flaky-tests-what-really-works') {
+    return `
     <hr />
     <h3>What Actually Works Against Flakiness</h3>
     <p>Below is a pragmatic, battle-tested checklist. Apply from top to bottom; stop when the signal stabilizes.</p>
@@ -169,7 +170,7 @@ import pytest
 @pytest.fixture()
 def user_payload():
     suffix = uuid.uuid4().hex[:8]
-    return { 'email': f'test+{suffix}@example.com', 'name': 'QA' }
+    return { 'email': f'test+${'{' }suffix{'}'}@example.com', 'name': 'QA' }
 
 def test_create_user(api, user_payload):
     res = api.post('/users', json=user_payload)
@@ -209,53 +210,209 @@ def test_eventually_consistent(api):
 </code></pre>
 
     <pre><code class="language-javascript">// Playwright Test: built-in retries in config
-// playwright.config.ts
-import { defineConfig } from '@playwright/test';
-export default defineConfig({
-  retries: process.env.CI ? 2 : 0,
-  reporter: [['html'], ['junit', { outputFile: 'reports/junit.xml' }]],
+`;
+  }
+
+  // API-first shift-left appendix
+  if (slug === 'shift-left-api-first-testing') {
+    return `
+    <hr />
+    <h3>Practical API‑First, Shift‑Left Playbook</h3>
+    <p>Below are concrete patterns and code you can copy into a greenfield or brownfield project to shift testing left by starting with the API.</p>
+
+    <h4>1) Specify First with OpenAPI</h4>
+    <p>Start from a contract. Treat it as the single source of truth for clients, servers, mocks, and tests.</p>
+    <pre><code class="language-yaml"># openapi.yaml (excerpt)
+openapi: 3.0.3
+info:
+  title: Orders API
+  version: 1.0.0
+paths:
+  /orders:
+    post:
+      summary: Create order
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NewOrder'
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Order' }
+components:
+  schemas:
+    NewOrder:
+      type: object
+      required: [customerId, items]
+      properties:
+        customerId: { type: string }
+        items:
+          type: array
+          minItems: 1
+          items:
+            type: object
+            required: [sku, qty]
+            properties:
+              sku: { type: string }
+              qty: { type: integer, minimum: 1 }
+    Order:
+      allOf:
+        - $ref: '#/components/schemas/NewOrder'
+        - type: object
+          properties:
+            id: { type: string }
+            status: { type: string, enum: [CREATED, PAID, SHIPPED] }
+</code></pre>
+
+    <h4>2) Generate Clients, Servers, and Tests</h4>
+    <p>Use the spec to scaffold artifacts and reduce hand-written boilerplate.</p>
+    <pre><code class="language-bash"># Generate a TypeScript client
+openapi-generator-cli generate -i openapi.yaml -g typescript-axios -o gen/ts-client
+
+# Generate a Node Express server stub
+openapi-generator-cli generate -i openapi.yaml -g nodejs-express-server -o gen/express-server
+</code></pre>
+
+    <h4>3) Validate Requests/Responses at Runtime</h4>
+    <p>Fail fast by validating traffic against the schema in dev and tests.</p>
+    <pre><code class="language-javascript">// Express.js with openapi-validator-middleware
+import express from 'express';
+import { OpenApiValidator } from 'express-openapi-validator';
+
+const app = express();
+app.use(express.json());
+await new OpenApiValidator({ apiSpec: 'openapi.yaml' }).install(app);
+
+app.post('/orders', (req, res) => {
+  // If we reach here, req.body matches NewOrder schema
+  res.status(201).json({ ...req.body, id: 'o_123', status: 'CREATED' });
 });
 </code></pre>
 
-    <h3>5) CI Stability</h3>
-    <p>Run tests hermetically: fixed resources, pinned browsers, and order-independent suites.</p>
-    <pre><code class="language-yaml"># GitHub Actions: ensure resources and caching
+    <h4>4) Fast API Tests at the Unit/Integration Layer</h4>
+    <pre><code class="language-java">// REST Assured + JUnit 5: happy path and contract assertions
+import static io.restassured.RestAssured.*;
+import static org.hamcrest.Matchers.*;
+import org.junit.jupiter.api.*;
+
+@Test
+void createOrder_201() {
+  given()
+    .contentType("application/json")
+    .body("{\\"customerId\\":\\"c_1\\",\\"items\\":[{\\"sku\\":\\"A1\\",\\"qty\\":1}]}")
+  .when()
+    .post("/orders")
+  .then()
+    .statusCode(201)
+    .body("id", notNullValue())
+    .body("status", equalTo("CREATED"));
+}
+</code></pre>
+
+    <pre><code class="language-javascript">// Supertest + Jest: Node example
+import request from 'supertest';
+import { app } from '../app';
+
+test('POST /orders creates order', async () => {
+  const res = await request(app)
+    .post('/orders')
+    .send({ customerId: 'c_1', items: [{ sku: 'A1', qty: 1 }] })
+    .expect(201);
+  expect(res.body).toMatchObject({ status: 'CREATED' });
+});
+</code></pre>
+
+    <h4>5) Mock Early, Parallelize Teams</h4>
+    <p>Unblock UI and partner teams using generated mocks.</p>
+    <pre><code class="language-bash"># Prism: mock server directly from OpenAPI
+npx @stoplight/prism-cli mock openapi.yaml --port 4010
+</code></pre>
+
+    <h4>6) Consumer‑Driven Contract Testing</h4>
+    <pre><code class="language-javascript">// Pact JS: define consumer expectations
+import { Pact } from '@pact-foundation/pact';
+import path from 'path';
+const provider = new Pact({
+  consumer: 'WebApp',
+  provider: 'OrdersAPI',
+  dir: path.resolve(process.cwd(), 'pacts')
+});
+
+await provider.setup();
+await provider.addInteraction({
+  state: 'order can be created',
+  uponReceiving: 'a valid order',
+  withRequest: {
+    method: 'POST', path: '/orders', headers: { 'Content-Type': 'application/json' },
+    body: { customerId: 'c_1', items: [{ sku: 'A1', qty: 1 }] }
+  },
+  willRespondWith: {
+    status: 201, headers: { 'Content-Type': 'application/json' },
+    body: { id: like('o_123'), status: 'CREATED' }
+  }
+});
+// exercise consumer -> provider.mockService
+// then write pact file and verify on provider CI
+</code></pre>
+
+    <h4>7) Performance Early</h4>
+    <pre><code class="language-javascript">// k6: lightweight load smoke
+import http from 'k6/http';
+import { check, sleep } from 'k6';
+
+export const options = { vus: 5, duration: '30s' };
+
+export default function () {
+  const res = http.post('http://localhost:3000/orders', JSON.stringify({
+    customerId: 'c_1', items: [{ sku: 'A1', qty: 1 }]
+  }), { headers: { 'Content-Type': 'application/json' } });
+  check(res, { '201': r => r.status === 201 });
+  sleep(1);
+}
+</code></pre>
+
+    <h4>8) Smoke in CI with Newman</h4>
+    <pre><code class="language-bash"># Postman CLI or Newman to run a regression on each PR
+newman run collection.json -e env.json --bail --reporters cli,junit
+</code></pre>
+
+    <h4>9) Wire it into CI</h4>
+    <pre><code class="language-yaml"># GitHub Actions (excerpt)
+name: api-ci
+on: [push, pull_request]
 jobs:
-  tests:
-    runs-on: ubuntu-24.04
+  test:
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with: { node-version: '20' }
-      - run: npm ci
-      - run: npx playwright install --with-deps
-      - run: npx playwright test --reporter=junit,line
+      - name: Install
+        run: npm ci
+      - name: Unit & API tests
+        run: npm test -- --reporter=junit
+      - name: Contract verify
+        run: npm run pact:verify
+      - name: k6 smoke
+        run: k6 run test/k6/orders-smoke.js
 </code></pre>
 
-    <h3>6) Quarantine and Tracking</h3>
-    <p>Quarantine known flakers to protect the main branch, but track and burn them down weekly.</p>
-    <pre><code class="language-bash"># Example: run stable suite only
-npx playwright test -g "@stable"  # tag stable tests
-</code></pre>
+    <h4>10) A Thin, Reliable E2E</h4>
+    <p>Keep end‑to‑end UI tests few and user‑journey focused. Assert API effects instead of pixel details.</p>
 
-    <pre><code class="language-sql">-- Flake detector: same test has both pass and fail in last 30 days
-SELECT test_name,
-       COUNT(*) FILTER (WHERE status = 'failed') AS fails,
-       COUNT(*) FILTER (WHERE status = 'passed') AS passes
-FROM test_results
-WHERE occurred_at &gt; now() - interval '30 days'
-GROUP BY test_name
-HAVING COUNT(*) FILTER (WHERE status = 'failed') &gt; 0
-   AND COUNT(*) FILTER (WHERE status = 'passed') &gt; 0
-ORDER BY fails DESC;
-</code></pre>
+    <h4>Key Takeaways</h4>
+    <ul>
+      <li>Treat the API contract as the product. Everything else is a build artifact.</li>
+      <li>Validate traffic against the schema to fail fast.</li>
+      <li>Favor consumer‑driven contracts over heavy end‑to‑end tests for integration confidence.</li>
+      <li>Start performance and security checks on endpoints during development, not at release time.</li>
+    </ul>
+    `;
+  }
 
-    <h3>Bonus: A Minimal Re-run Script</h3>
-    <pre><code class="language-bash">#!/usr/bin/env bash
-set -euo pipefail
-npx playwright test || npx playwright test --last-failed
-</code></pre>
-
-    <p>Do the boring things first: deterministic waits, data isolation, and stubbing. Then add measured retries and quarantine. That combination eliminates 80–90% of flakiness in most pipelines.</p>
-  `;
+  return '';
 }
