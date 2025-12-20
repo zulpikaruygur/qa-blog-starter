@@ -11,6 +11,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="assets/css/styles.css" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" integrity="sha512-SnH5WK+bZxgPHs44uWIX+LLJAJ9/2PkPKZ5QiAj6Ta86w+fsb2TkcmfRyVX3pBnMFcV7oQPJkl9QevSCWr3W6A==" crossorigin="anonymous" referrerpolicy="no-referrer" />
 <!-- Prism for code syntax highlighting -->
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism.min.css" integrity="sha512-bd4C3aH2v2SH0g4u7qv2wA8qKQ2r7q4g0nI7x7l0jVq8hN8Qj0jQqR9yT7X5+o7Y1Sg1d3w9J2c1gE0qS3C2bA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
 <script defer src="assets/js/main.js"></script>
@@ -35,8 +36,9 @@
   <h1>Projects</h1>
   <div class="grid cards">
     <article class="card">
-      <h3>Playwright Starter (TS/JS)</h3>
+      <h3><i class="fa-brands fa-playwright"></i> Playwright Starter (TS/JS)</h3>
       <p>Fixtures, POM, API + UI tests, env config, parallelization, and GitHub Actions demo.</p>
+      <a href="#" target="_blank" rel="noopener" class="button">View on GitHub</a>
       <pre><code class="language-bash"># Run tests
 npx playwright test
 
@@ -44,8 +46,9 @@ npx playwright test
 npx playwright show-report</code></pre>
     </article>
     <article class="card">
-      <h3>Selenium + Cucumber (Java)</h3>
+      <h3><i class="fa-brands fa-java"></i> Selenium + Cucumber (Java)</h3>
       <p>Hooks, page objects, reusable steps, cross-browser with Grid, and comprehensive reporting.</p>
+      <a href="#" target="_blank" rel="noopener" class="button">View on GitHub</a>
       <pre><code class="language-bash"># Run tagged tests
 mvn clean test -Dcucumber.filter.tags="@smoke"
 
@@ -53,8 +56,14 @@ mvn clean test -Dcucumber.filter.tags="@smoke"
 mvn surefire-report:report</code></pre>
     </article>
     <article class="card">
-      <h3>API Testing with RestAssured</h3>
+      <h3><i class="fa-solid fa-server"></i> API Testing with RestAssured</h3>
       <p>Contract tests, data-driven suites, and CI with test containers.</p>
+      <a href="#" target="_blank" rel="noopener" class="button">View on GitHub</a>
+      <pre><code class="language-bash"># Run tests with a specific profile
+mvn clean verify -Pstaging
+
+# View Allure report
+mvn allure:serve</code></pre>
     </article>
   </div>
 </main>
@@ -76,8 +85,8 @@ mvn surefire-report:report</code></pre>
     <div>
       <h4>Connect</h4>
       <ul>
-        <li><a href="https://www.linkedin.com" target="_blank" rel="noopener">LinkedIn</a></li>
-        <li><a href="https://github.com" target="_blank" rel="noopener">GitHub</a></li>
+        <li><a href="https://www.linkedin.com/in/zulpikaruygur" target="_blank" rel="noopener">LinkedIn</a></li>
+        <li><a href="https://github.com/zulpikaruygur" target="_blank" rel="noopener">GitHub</a></li>
         <li><a href="mailto:zulfikaruygur@gmail.com">Email</a></li>
       </ul>
     </div>

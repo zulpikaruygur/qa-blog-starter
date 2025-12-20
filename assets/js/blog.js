@@ -4,6 +4,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const searchInput = document.getElementById('searchInput');
   const tagList = document.getElementById('tagList');
   const hash = decodeURIComponent(location.hash.replace('#',''));
+  syncModalState();
 
   fetch('assets/data/posts.json')
     .then(r => r.json())
@@ -20,27 +21,46 @@ document.addEventListener('DOMContentLoaded', () => {
       if (list) list.innerHTML = `<p class="subtle">Failed to load posts. Please refresh.</p>`;
     });
 
-  searchInput.addEventListener('input', () => {
-    const q = searchInput.value.toLowerCase().trim();
-    const filtered = allPosts.filter(p =>
-      p.title.toLowerCase().includes(q) ||
-      p.excerpt.toLowerCase().includes(q) ||
-      p.tags.join(' ').toLowerCase().includes(q)
-    );
-    renderPosts(filtered, list);
+  if (searchInput) {
+    searchInput.addEventListener('input', () => {
+      const q = searchInput.value.toLowerCase().trim();
+      const filtered = allPosts.filter(p =>
+        p.title.toLowerCase().includes(q) ||
+        p.excerpt.toLowerCase().includes(q) ||
+        p.tags.join(' ').toLowerCase().includes(q)
+      );
+      renderPosts(filtered, list);
+    });
+  }
+
+  if (tagList) {
+    tagList.addEventListener('click', (e) => {
+      const el = e.target.closest('.tag');
+      if (!el) return;
+      const tag = el.dataset.tag;
+      const active = el.classList.contains('active');
+      document.querySelectorAll('#tagList .tag').forEach(t => t.classList.remove('active'));
+      if (!active) el.classList.add('active');
+      const chosen = !active ? tag : null;
+      const filtered = chosen ? allPosts.filter(p => p.tags.includes(chosen)) : allPosts;
+      renderPosts(filtered, list);
+    });
+  }
+
+  window.addEventListener('hashchange', () => {
+    if (!location.hash) {
+      const modal = document.querySelector('.modal');
+      if (modal) closeModal(modal);
+    }
+    syncModalState();
   });
 
-  tagList.addEventListener('click', (e) => {
-    const el = e.target.closest('.tag');
-    if (!el) return;
-    const tag = el.dataset.tag;
-    const active = el.classList.contains('active');
-    document.querySelectorAll('#tagList .tag').forEach(t => t.classList.remove('active'));
-    if (!active) el.classList.add('active');
-    const chosen = !active ? tag : null;
-    const filtered = chosen ? allPosts.filter(p => p.tags.includes(chosen)) : allPosts;
-    renderPosts(filtered, list);
+  // bfcache can restore the page with modal-open still set.
+  window.addEventListener('pageshow', () => {
+    syncModalState();
   });
+
+  window.addEventListener('popstate', syncModalState);
 });
 
 function renderTags(posts, mount) {
@@ -79,18 +99,44 @@ function openPostModal(slug) {
       <div class="post-body">${post.html}${appendix}</div>
     </article>`;
   document.body.appendChild(modal);
+  document.body.classList.add('modal-open');
   document.body.style.overflow = 'hidden';
+  debugModalState('openPostModal');
   if (window.Prism && typeof Prism.highlightAllUnder === 'function') {
     Prism.highlightAllUnder(modal);
   }
-
   modal.querySelector('.modal-backdrop').addEventListener('click', () => closeModal(modal));
   modal.querySelector('.modal-close').addEventListener('click', () => closeModal(modal));
 }
 
 function closeModal(m) {
-  m.remove();
+  if (m) m.remove();
   document.body.classList.remove('modal-open');
+  document.body.style.overflow = '';
+  debugModalState('closeModal');
+  if (location.hash) {
+    history.replaceState(null, '', location.pathname + location.search);
+  }
+}
+
+function syncModalState() {
+  const modal = document.querySelector('.modal');
+  if (!location.hash && modal) {
+    modal.remove();
+  }
+  const modalExists = !!document.querySelector('.modal');
+  if (!modalExists) {
+    document.body.classList.remove('modal-open');
+    document.body.style.overflow = '';
+  }
+  debugModalState('syncModalState');
+}
+
+function debugModalState(source) {
+  const modalCount = document.querySelectorAll('.modal').length;
+  const hasModalOpen = document.body.classList.contains('modal-open');
+  const inlineOverflow = document.body.style.overflow || '(empty)';
+  console.log('[blog modal]', source, { modalCount, hasModalOpen, inlineOverflow, hash: location.hash });
 }
 
 // Dynamically append extended content for specific posts without touching posts.json
